@@ -1,101 +1,132 @@
 from kivy.lang import Builder
-
+from kivy.uix.boxlayout import BoxLayout
+from kivy.properties import StringProperty, ListProperty
+from kivymd.uix.tab import MDTabsBase
 from kivymd.app import MDApp
+from kivymd.theming import ThemableBehavior
+from kivymd.uix.list import OneLineIconListItem, MDList
+from kivymd.uix.floatlayout import MDFloatLayout
+from kivymd.icon_definitions import md_icons
+from kivymd.font_definitions import fonts
+
 
 KV = '''
-#:import get_color_from_hex kivy.utils.get_color_from_hex
+# Menu item in the DrawerList list.
+<ItemDrawer>:
+    theme_text_color: "Custom"
+    on_release: self.parent.set_color_item(self)
 
-#:set text_color get_color_from_hex("#4a4939")
-#:set focus_color get_color_from_hex("#e7e4c0")
-#:set ripple_color get_color_from_hex("#c5bdd2")
-#:set bg_color get_color_from_hex("#f7f4e7")
-#:set selected_color get_color_from_hex("#0c6c4d")
-
-
-<DrawerClickableItem@MDNavigationDrawerItem>
-    focus_color: focus_color
-    unfocus_color: bg_color
-    text_color: text_color
-    icon_color: text_color
-    ripple_color: ripple_color
-    selected_color: selected_color
+    IconLeftWidget:
+        id: icon
+        icon: root.icon
+        theme_text_color: "Custom"
+        text_color: root.text_color
 
 
-<DrawerLabelItem@MDNavigationDrawerItem>
-    bg_color: bg_color
-    text_color: text_color
-    icon_color: text_color
-    _no_ripple_effect: True
+<ContentNavigationDrawer>:
+    orientation: "vertical"
+    padding: "8dp"
+    spacing: "8dp"
+
+    AnchorLayout:
+        anchor_x: "left"
+        size_hint_y: None
+        height: avatar.height
+
+        Image:
+            id: avatar
+            size_hint: None, None
+            size: "56dp", "56dp"
+            source: "data/logo/kivy-icon-256.png"
+
+    MDLabel:
+        text: "KivyMD library"
+        font_style: "Button"
+        size_hint_y: None
+        height: self.texture_size[1]
+
+    MDLabel:
+        text: "kivydevelopment@gmail.com"
+        font_style: "Caption"
+        size_hint_y: None
+        height: self.texture_size[1]
+
+    ScrollView:
+
+        DrawerList:
+            id: md_list
 
 
-MDScreen:
+
+Screen:
 
     MDNavigationLayout:
 
         ScreenManager:
 
-            MDScreen:
+            Screen:
 
-                MDToolbar:
-                    title: "Morgage Calkulator"
-                    elevation: 10
-                    pos_hint: {"top": 1}
-                    md_bg_color: focus_color
-                    specific_text_color: text_color
-                    left_action_items:
-                        [                             [                             'menu', lambda x:                             nav_drawer.set_state("open")                             if nav_drawer.state == "close" else                             nav_drawer.set_state("close")                             ]                             ]
-                Widget:
-                    MDTextField:
-                        hint_text: "Helper text on focus"
-                        helper_text: "This will disappear when you click off"
-                        helper_text_mode: "on_focus"
+                BoxLayout:
+                    orientation: 'vertical'
+
+                    MDToolbar:
+                        title: "Navigation Drawer"
+                        elevation: 10
+                        left_action_items: [['menu', lambda x: nav_drawer.set_state("open")]]
+                    MDTabs:
+                        id: tabs
+
+
         MDNavigationDrawer:
             id: nav_drawer
-            radius: (0, 16, 16, 0) if self.anchor == "left" else (16, 0, 0, 16)
-            md_bg_color: bg_color
 
-            MDNavigationDrawerMenu:
-
-                MDNavigationDrawerHeader:
-                    title: "Header title"
-                    title_color: text_color
-                    text: "Header text"
-                    title_color: text_color
-                    spacing: "4dp"
-                    padding: "12dp", 0, 0, "56dp"
-
-                MDNavigationDrawerLabel:
-                    text: "Mail"
-
-                DrawerClickableItem:
-                    icon: "gmail"
-                    right_text: "+99"
-                    text_right_color: text_color
-                    text: "Inbox"
-
-                DrawerClickableItem:
-                    icon: "send"
-                    text: "Outbox"
-
-                MDNavigationDrawerDivider:
-
-                MDNavigationDrawerLabel:
-                    text: "Labels"
-
-                DrawerLabelItem:
-                    icon: "information-outline"
-                    text: "Label"
-
-                DrawerLabelItem:
-                    icon: "information-outline"
-                    text: "Label"
+            ContentNavigationDrawer:
+                id: content_drawer
 '''
 
 
-class MorgageCalkulator(MDApp):
+class Tab(MDFloatLayout, MDTabsBase):
+    pass
+
+class ContentNavigationDrawer(BoxLayout):
+    pass
+
+
+class ItemDrawer(OneLineIconListItem):
+    icon = StringProperty()
+    text_color = ListProperty((0, 0, 0, 1))
+
+
+class DrawerList(ThemableBehavior, MDList):
+    def set_color_item(self, instance_item):
+        """Called when tap on a menu item."""
+
+        # Set the color of the icon and text for the menu item.
+        for item in self.children:
+            if item.text_color == self.theme_cls.primary_color:
+                item.text_color = self.theme_cls.text_color
+                break
+        instance_item.text_color = self.theme_cls.primary_color
+
+
+class MorgageCalkulatorApp(MDApp):
     def build(self):
-        self.theme_cls.primary_palette = "Indigo"
         return Builder.load_string(KV)
 
+    def on_start(self):
+        icons_item = {
+            "folder": "My files",
+            "account-multiple": "Shared with me",
+            "star": "Starred",
+            "history": "Recent",
+            "checkbox-marked": "Shared with me",
+            "upload": "Upload",
+        }
+        for icon_name in icons_item.keys():
+            self.root.ids.content_drawer.ids.md_list.add_widget(
+                ItemDrawer(icon=icon_name, text=icons_item[icon_name])
+            )
+        for icon_name, name_tab in icons_item.items():
+            self.root.ids.tabs.add_widget(Tab(text=f" [ref={name_tab}][font={fonts[-1]['fn_regular']}]{md_icons[icon_name]}[/font][/ref] {name_tab}"))
 
-MorgageCalkulator().run()
+MorgageCalkulatorApp().run()
