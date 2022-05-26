@@ -274,6 +274,8 @@ class MorgageCalkulatorApp(MDApp):
 
         Clock.schedule_once(set_item, 0.5)
 
+
+
     def get_date(self, date):
         '''
         :type date: <class 'datetime.date'>
